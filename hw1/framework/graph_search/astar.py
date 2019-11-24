@@ -74,10 +74,8 @@ class AStar(BestFirstSearch):
             if opened_node.expanding_priority > successor_node.expanding_priority:
                 self.open.extract_node(opened_node)
                 self.open.push_node(successor_node)
-            return
-        if cloesd_node is None:
+        elif cloesd_node is None:
             self.open.push_node(successor_node)
-        else:
-            if cloesd_node.expanding_priority > successor_node.expanding_priority:
+        elif cloesd_node.expanding_priority > successor_node.expanding_priority:
                 self.close.remove_node(cloesd_node)
                 self.open.push_node(successor_node)
