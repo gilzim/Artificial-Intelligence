@@ -48,7 +48,8 @@ class AStar(BestFirstSearch):
         Notice: You may use `search_node.g_cost`, `self.heuristic_weight`, and `self.heuristic_function`.
         """
 
-        raise NotImplementedError()  # TODO: remove this line!
+        assert isinstance(self.heuristic_function, HeuristicFunction)
+        return (1-self.heuristic_weight) * search_node.g_cost + self.heuristic_weight*self.heuristic_function.estimate(search_node.state)
 
     def _open_successor_node(self, problem: GraphProblem, successor_node: SearchNode):
         """
@@ -67,5 +68,16 @@ class AStar(BestFirstSearch):
         Remember: In A*, in contrast to uniform-cost, a successor state might have an already closed node,
                   but still could be improved.
         """
-
-        raise NotImplementedError()  # TODO: remove this line!
+        cloesd_node: SearchNode = self.close.get_node_by_state(successor_node.state)
+        opened_node: SearchNode = self.open.get_node_by_state(successor_node.state)
+        if opened_node is not None:
+            if opened_node.expanding_priority > successor_node.expanding_priority:
+                self.open.extract_node(opened_node)
+                self.open.push_node(successor_node)
+            return
+        if cloesd_node is None:
+            self.open.push_node(successor_node)
+        else:
+            if cloesd_node.expanding_priority > successor_node.expanding_priority:
+                self.close.remove_node(cloesd_node)
+                self.open.push_node(successor_node)
