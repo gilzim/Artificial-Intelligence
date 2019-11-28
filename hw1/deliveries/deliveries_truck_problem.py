@@ -202,7 +202,6 @@ class DeliveriesTruckProblem(GraphProblem):
                     loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
                     dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
                     operator_name = "drop " + d.client_name
-                    print(len(dropped_deliveries))
                     break
 
             if not is_drop_location:
