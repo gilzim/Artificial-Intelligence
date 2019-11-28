@@ -183,6 +183,39 @@ class DeliveriesTruckProblem(GraphProblem):
         """
 
         assert isinstance(state_to_expand, DeliveriesTruckState)
+        current_junction = state_to_expand.current_location
+        num_loaded_packages = state_to_expand.get_total_nr_packages_loaded()
+        max_capacity = self.problem_input.delivery_truck.max_nr_loaded_packages
+        deliveries_to_pick = self.get_deliveries_waiting_to_pick(state_to_expand)
+        loaded_deliveries = state_to_expand.loaded_deliveries
+        dropped_deliveries = state_to_expand.dropped_deliveries
+
+        for link in current_junction.outgoing_links:
+            succ_junction = self.streets_map[link.target]
+            operator_name = None
+
+            for d in loaded_deliveries:
+                if d.drop_location == succ_junction:
+                    delivery_to_drop = {d}
+                    loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
+                    dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
+                    operator_name = "drop " + d.client_name
+                    break
+
+            for d in deliveries_to_pick:
+                if d.pick_location == succ_junction and max_capacity >= num_loaded_packages + d.nr_packages:
+                    delivery_to_pick = {d}
+                    loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
+                    operator_name = "pick " + d.client_name
+                    break
+
+            succ_state = DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction)
+            yield OperatorResult(succ_state,
+                                 self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
+                                 operator_name)
+
+
+
 
 
     def is_goal(self, state: GraphProblemState) -> bool:
@@ -191,7 +224,7 @@ class DeliveriesTruckProblem(GraphProblem):
         TODO [Ex.15]: implement this method!
         """
         assert isinstance(state, DeliveriesTruckState)
-        return state.loaded_deliveries is None and state.dropped_deliveries is None
+        return state.dropped_deliveries == self.problem_input.deliveries
 
     def _calc_map_road_cost(self, link: Link) -> DeliveryCost:
         """
@@ -254,10 +287,7 @@ class DeliveriesTruckProblem(GraphProblem):
                 generated set.
             Note: This method can be implemented using a single line of code.
         """
-        deli = set(self.problem_input.deliveries)
-        for delivery in state.loaded_deliveries.union(state.dropped_deliveries):
-            deli.remove(delivery)
-        return deli
+        return set(self.problem_input.deliveries).difference(state.loaded_deliveries.union(state.dropped_deliveries))
 
     def get_all_junctions_in_remaining_truck_path(self, state: DeliveriesTruckState) -> Set[Junction]:
         """
