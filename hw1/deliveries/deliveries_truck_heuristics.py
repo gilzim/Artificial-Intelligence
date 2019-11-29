@@ -42,13 +42,13 @@ class TruckDeliveriesMaxAirDistHeuristic(HeuristicFunction):
         assert isinstance(self.problem, DeliveriesTruckProblem)
         assert isinstance(state, DeliveriesTruckState)
 
-        remaining_locations = self.problem.get_all_junctions_in_remaining_truck_path(state)
-        if len(remaining_locations) < 2:
+        remaining_junctions = self.problem.get_all_junctions_in_remaining_truck_path(state)
+        if len(remaining_junctions) < 2:
             return 0
 
         total_distance_lower_bound = max(self.cached_air_distance_calculator.get_air_distance_between_junctions(j1, j2)
-                                         for j1 in remaining_locations
-                                         for j2 in remaining_locations
+                                         for j1 in remaining_junctions
+                                         for j2 in remaining_junctions
                                          if j1 != j2)
 
         return self.problem.get_cost_lower_bound_from_distance_lower_bound(total_distance_lower_bound)
@@ -79,12 +79,19 @@ class TruckDeliveriesSumAirDistHeuristic(HeuristicFunction):
         assert isinstance(self.problem, DeliveriesTruckProblem)
         assert isinstance(state, DeliveriesTruckState)
 
-        all_junctions_in_remaining_truck_path = self.problem.get_all_junctions_in_remaining_truck_path(state)
+        remaining_junctions = self.problem.get_all_junctions_in_remaining_truck_path(state)
 
-        if len(all_junctions_in_remaining_truck_path) < 2:
+        if len(remaining_junctions) < 2:
             return 0
 
-        total_cost_of_greedily_built_path = 10  # TODO: modify this line and complete the missing implementation here.
+        total_cost_of_greedily_built_path = 0
+        current: Junction = state.current_location
+        while remaining_junctions:
+            air_distance_and_junction_list = [(self.cached_air_distance_calculator.get_air_distance_between_junctions(current, j), j) for j in remaining_junctions]
+            min_distance, closest_junction = min(t for t in air_distance_and_junction_list)
+            total_cost_of_greedily_built_path += min_distance
+            remaining_junctions = remaining_junctions.remove(closest_junction)
+            current = closest_junction
 
         return self.problem.get_cost_lower_bound_from_distance_lower_bound(total_cost_of_greedily_built_path)
 

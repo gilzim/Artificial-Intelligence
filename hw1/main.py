@@ -189,14 +189,16 @@ def deliveries_truck_problem_with_astar_experiments():
     # Ex.18
     # TODO: create an instance of `AStar` with the `TruckDeliveriesMaxAirDistHeuristic`,
     #       solve the `moderate_delivery_problem_with_distance_cost` with it and print the results.
-    astar = AStar(TruckDeliveriesMaxAirDistHeuristic)
-    res = astar.solve_problem(moderate_delivery_problem_with_distance_cost)
+    max_astar = AStar(TruckDeliveriesMaxAirDistHeuristic)
+    res = max_astar.solve_problem(moderate_delivery_problem_with_distance_cost)
     print(res)
-    exit()  # TODO: remove!
 
     # Ex.21
     # TODO: create an instance of `AStar` with the `TruckDeliveriesSumAirDistHeuristic`,
     #       solve the `moderate_delivery_problem_with_distance_cost` with it and print the results.
+    sum_astar = AStar(TruckDeliveriesSumAirDistHeuristic)
+    res = sum_astar.solve_problem(moderate_delivery_problem_with_distance_cost)
+    print(res)
     exit()  # TODO: remove!
 
     # Ex.24
@@ -300,7 +302,7 @@ def big_deliveries_truck_problem_with_non_acceptable_heuristic_and_anytime_astar
 
 def run_all_experiments():
     # toy_map_problem_experiments()
-    basic_deliveries_truck_problem_experiments()
+    # basic_deliveries_truck_problem_experiments()
     deliveries_truck_problem_with_astar_experiments()
     deliveries_truck_problem_with_weighted_astar_experiments()
     multiple_objectives_deliveries_truck_problem_experiments()
