@@ -6,7 +6,6 @@ from framework import *
 from .deliveries_truck_problem import *
 from .cached_air_distance_calculator import CachedAirDistanceCalculator
 
-
 __all__ = ['TruckDeliveriesMaxAirDistHeuristic', 'TruckDeliveriesSumAirDistHeuristic',
            'TruckDeliveriesMSTAirDistHeuristic']
 
@@ -43,11 +42,14 @@ class TruckDeliveriesMaxAirDistHeuristic(HeuristicFunction):
         assert isinstance(self.problem, DeliveriesTruckProblem)
         assert isinstance(state, DeliveriesTruckState)
 
-        all_junctions_in_remaining_truck_path = self.problem.get_all_junctions_in_remaining_truck_path(state)
-        if len(all_junctions_in_remaining_truck_path) < 2:
+        remaining_locations = self.problem.get_all_junctions_in_remaining_truck_path(state)
+        if len(remaining_locations) < 2:
             return 0
 
-        total_distance_lower_bound = 10  # TODO: modify this line.
+        total_distance_lower_bound = max(self.cached_air_distance_calculator.get_air_distance_between_junctions(j1, j2)
+                                         for j1 in remaining_locations
+                                         for j2 in remaining_locations
+                                         if j1 != j2)
 
         return self.problem.get_cost_lower_bound_from_distance_lower_bound(total_distance_lower_bound)
 

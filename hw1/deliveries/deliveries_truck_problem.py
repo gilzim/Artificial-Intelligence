@@ -190,37 +190,25 @@ class DeliveriesTruckProblem(GraphProblem):
         loaded_deliveries = state_to_expand.loaded_deliveries
         dropped_deliveries = state_to_expand.dropped_deliveries
 
-        for link in current_junction.outgoing_links:
-            succ_junction = self.streets_map[link.target]
-            operator_name = None
-            is_drop_location = False
-            is_pick_location = False
-            can_load = False
-            for d in loaded_deliveries:
-                if d.drop_location == succ_junction:
-                    delivery_to_drop = {d}
-                    loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
-                    dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
-                    operator_name = "drop " + d.client_name
-                    break
-
-            if not is_drop_location:
-                for d in deliveries_to_pick:
-                    if d.pick_location == succ_junction:
-                        is_pick_location = True
-                        if max_capacity >= num_loaded_packages + d.nr_packages:
-                            can_load = True
-                            delivery_to_pick = {d}
-                            loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
-                            operator_name = "pick " + d.client_name
-                            break
-
-            if is_pick_location and not can_load:
-                continue
-            succ_state = DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction)
-            yield OperatorResult(succ_state,
+        for d in loaded_deliveries:
+            delivery_to_drop = {d}
+            new_loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
+            new_dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
+            operator_name = "drop " + d.client_name
+            succ_junction = d.drop_location
+            yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, new_dropped_deliveries, succ_junction),
                                  self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
                                  operator_name)
+
+        for d in deliveries_to_pick:
+            if max_capacity >= num_loaded_packages + d.nr_packages:
+                delivery_to_pick = {d}
+                new_loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
+                operator_name = "pick " + d.client_name
+                succ_junction = d.pick_location
+                yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, dropped_deliveries, succ_junction),
+                                     self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
+                                     operator_name)
 
     def is_goal(self, state: GraphProblemState) -> bool:
         """
@@ -305,7 +293,10 @@ class DeliveriesTruckProblem(GraphProblem):
                 `list-comprehension` technique. Example: {i * 10 for i in range(100)} would create
                 a set of the items {0, 10, 20, 30, ..., 990}
         """
-        raise NotImplementedError()  # TODO: remove this line!
+        remaining_deliveries = self.get_deliveries_waiting_to_pick(state).union(state.loaded_deliveries)
+        remaining_locations = {d.pick_location for d in remaining_deliveries}.union(d.drop_location for d in remaining_deliveries)
+        remaining_locations.add(state.current_location)
+        return remaining_locations
 
 
 class TruckDeliveriesInnerMapProblemHeuristic(HeuristicFunction):
