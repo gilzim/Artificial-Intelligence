@@ -87,7 +87,9 @@ class TruckDeliveriesSumAirDistHeuristic(HeuristicFunction):
         total_cost_of_greedily_built_path = 0
         current: Junction = state.current_location
         while remaining_junctions:
-            air_distance_and_junction_list = [(self.cached_air_distance_calculator.get_air_distance_between_junctions(current, j), j) for j in remaining_junctions]
+            air_distance_and_junction_list = [
+                (self.cached_air_distance_calculator.get_air_distance_between_junctions(current, j), j) for j in
+                remaining_junctions]
             min_distance, closest_junction = min(t for t in air_distance_and_junction_list)
             total_cost_of_greedily_built_path += min_distance
             remaining_junctions = remaining_junctions.remove(closest_junction)
@@ -130,4 +132,16 @@ class TruckDeliveriesMSTAirDistHeuristic(HeuristicFunction):
                to calculate the air distance between the two junctions.
               Google for how to use `networkx` package for this purpose.
         """
-        raise NotImplementedError()  # TODO: remove this line!
+
+        nodes = [u.index for u in junctions]
+        edges = [(u, v) for (u, v) in zip(junctions, junctions) if u != v]
+
+        G = nx.Graph()
+        G.add_nodes_from(nodes)
+        for (u, v) in edges:
+            G.add_edge(u.index, v.index,
+                       weight=self.cached_air_distance_calculator.get_air_distance_between_junctions(v, u))
+
+        T = nx.minimum_spanning_edges(G)
+        print(sum(G[u, v]['weight'] for (u, v) in T))
+        return sum(G[u, v]['weight'] for (u, v) in T)

@@ -151,7 +151,8 @@ loaded_problem_inputs_by_size = {}
 loaded_problems_by_size_and_opt_obj = {}
 
 
-def get_deliveries_problem(problem_input_size: str = 'small', optimization_objective: OptimizationObjective = OptimizationObjective.Distance):
+def get_deliveries_problem(problem_input_size: str = 'small',
+                           optimization_objective: OptimizationObjective = OptimizationObjective.Distance):
     if (problem_input_size, optimization_objective) in loaded_problems_by_size_and_opt_obj:
         return loaded_problems_by_size_and_opt_obj[(problem_input_size, optimization_objective)]
     assert problem_input_size in {'small', 'moderate', 'big'}
@@ -183,7 +184,8 @@ def basic_deliveries_truck_problem_experiments():
 
 def deliveries_truck_problem_with_astar_experiments():
     print()
-    print('Solve the truck deliveries problem (moderate input, only distance objective, A*, MaxAirDist & SumAirDist & MSTAirDist heuristics).')
+    print(
+        'Solve the truck deliveries problem (moderate input, only distance objective, A*, MaxAirDist & SumAirDist & MSTAirDist heuristics).')
 
     moderate_delivery_problem_with_distance_cost = get_deliveries_problem('moderate', OptimizationObjective.Distance)
     # Ex.18
@@ -199,12 +201,13 @@ def deliveries_truck_problem_with_astar_experiments():
     sum_astar = AStar(TruckDeliveriesSumAirDistHeuristic)
     res = sum_astar.solve_problem(moderate_delivery_problem_with_distance_cost)
     print(res)
-    exit()  # TODO: remove!
 
     # Ex.24
     # TODO: create an instance of `AStar` with the `TruckDeliveriesMSTAirDistHeuristic`,
     #       solve the `moderate_delivery_problem_with_distance_cost` with it and print the results.
-    exit()  # TODO: remove!
+    mst_astar = AStar(TruckDeliveriesMSTAirDistHeuristic)
+    res = mst_astar.solve_problem(moderate_delivery_problem_with_distance_cost)
+    print(res)
 
 
 def deliveries_truck_problem_with_weighted_astar_experiments():
@@ -218,13 +221,15 @@ def deliveries_truck_problem_with_weighted_astar_experiments():
     # TODO: Call here the function `run_astar_for_weights_in_range()`
     #       with `TruckDeliveriesMSTAirDistHeuristic`
     #       over the `small_delivery_problem_with_distance_cost`.
-    exit()  # TODO: remove!
+
+    run_astar_for_weights_in_range(TruckDeliveriesMSTAirDistHeuristic, small_delivery_problem_with_distance_cost)
 
     # Ex.26
     # TODO: Call here the function `run_astar_for_weights_in_range()`
     #       with `TruckDeliveriesSumAirDistHeuristic`
     #       over the `moderate_delivery_problem_with_distance_cost`.
-    exit()  # TODO: remove!
+
+    run_astar_for_weights_in_range(TruckDeliveriesSumAirDistHeuristic, moderate_delivery_problem_with_distance_cost)
 
 
 def multiple_objectives_deliveries_truck_problem_experiments():
