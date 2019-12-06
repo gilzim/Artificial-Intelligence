@@ -192,21 +192,21 @@ class DeliveriesTruckProblem(GraphProblem):
 
         for d in loaded_deliveries:
             delivery_to_drop = {d}
-            new_loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
-            new_dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
+            loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
+            dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
             operator_name = "drop " + d.client_name
             succ_junction = d.drop_location
-            yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, new_dropped_deliveries, succ_junction),
+            yield OperatorResult(DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction),
                                  self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
                                  operator_name)
 
         for d in deliveries_to_pick:
             if max_capacity >= num_loaded_packages + d.nr_packages:
                 delivery_to_pick = {d}
-                new_loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
+                loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
                 operator_name = "pick " + d.client_name
                 succ_junction = d.pick_location
-                yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, dropped_deliveries, succ_junction),
+                yield OperatorResult(DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction),
                                      self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
                                      operator_name)
 
@@ -234,10 +234,15 @@ class DeliveriesTruckProblem(GraphProblem):
         """
         optimal_velocity, gas_cost_per_meter = self.problem_input.delivery_truck.calc_optimal_driving_parameters(
             optimization_objective=self.optimization_objective, max_driving_speed=link.max_speed)
+
+        money_cost = gas_cost_per_meter * link.distance
+        if link.is_toll_road:
+            money_cost += self.problem_input.toll_road_cost_per_meter * link.distance
+
         return DeliveryCost(
             distance_cost=link.distance,
-            time_cost=0,  # TODO: modify this value!
-            money_cost=0,  # TODO: modify this value!
+            time_cost=link.distance / optimal_velocity,
+            money_cost=money_cost,
             optimization_objective=self.optimization_objective)
 
     def get_zero_cost(self) -> Cost:
@@ -264,10 +269,11 @@ class DeliveriesTruckProblem(GraphProblem):
         if self.optimization_objective == OptimizationObjective.Distance:
             return total_distance_lower_bound
         elif self.optimization_objective == OptimizationObjective.Time:
-            raise NotImplementedError()  # TODO: remove this line and complete the implementation of this case!
+            return total_distance_lower_bound / MAX_ROAD_SPEED
         else:
             assert self.optimization_objective == OptimizationObjective.Money
-            raise NotImplementedError()  # TODO: remove this line and complete the implementation of this case!
+            return self._calc_map_road_cost(
+                Link(source=1, target=1, distance=total_distance_lower_bound, highway_type=1, max_speed=MAX_ROAD_SPEED)).distance_cost
 
     def get_deliveries_waiting_to_pick(self, state: DeliveriesTruckState) -> Set[Delivery]:
         """
@@ -294,7 +300,8 @@ class DeliveriesTruckProblem(GraphProblem):
                 a set of the items {0, 10, 20, 30, ..., 990}
         """
         remaining_deliveries = self.get_deliveries_waiting_to_pick(state).union(state.loaded_deliveries)
-        remaining_locations = {d.pick_location for d in remaining_deliveries}.union(d.drop_location for d in remaining_deliveries)
+        remaining_locations = {d.pick_location for d in remaining_deliveries}.union(
+            d.drop_location for d in remaining_deliveries)
         remaining_locations.add(state.current_location)
         return remaining_locations
 

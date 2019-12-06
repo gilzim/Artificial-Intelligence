@@ -95,7 +95,7 @@ class MapProblem(GraphProblem):
 
         # TODO [Ex.10]: modify the returned value to indicate whether `state` is a final state.
         # You may use the problem's input parameters (stored as fields of this object by the constructor).
-        return self.streets_map[state.junction_id].outgoing_links is None
+        return state.junction_id == self.target_junction_id
 
     def get_zero_cost(self) -> Cost:
         if self.zero_road_cost is not None:
