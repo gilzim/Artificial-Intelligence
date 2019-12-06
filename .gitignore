@@ -1,0 +1,14 @@
+
+hw1/deliveries/__pycache__/
+
+hw1/.idea/
+
+hw1/framework/__pycache__/
+
+hw1/framework/graph_search/__pycache__/
+
+hw1/framework/graph_search/utils/__pycache__/
+
+hw1/framework/ways/__pycache__/
+
+*.pptx
