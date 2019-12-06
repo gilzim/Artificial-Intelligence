@@ -6,7 +6,6 @@ from .map_problem import MapProblem, MapState
 from .cached_map_distance_finder import CachedMapDistanceFinder
 from .deliveries_truck_problem_input import *
 
-
 __all__ = ['DeliveriesTruckState', 'DeliveryCost', 'DeliveriesTruckProblem', 'TruckDeliveriesInnerMapProblemHeuristic']
 
 
@@ -42,8 +41,8 @@ class DeliveriesTruckState(GraphProblemState):
         current_location = 'initial-location' if last_action is None else f'{last_action[0]} loc @ {last_action[1]}'
 
         return f'(dropped: {list(self.dropped_deliveries)} ' \
-               f'loaded: {list(self.loaded_deliveries)} ' \
-               f'current_location: {current_location})'
+            f'loaded: {list(self.loaded_deliveries)} ' \
+            f'current_location: {current_location})'
 
     def __eq__(self, other):
         """
@@ -56,7 +55,8 @@ class DeliveriesTruckState(GraphProblemState):
         #   (using equals `==` operator) because the class `Junction` explicitly
         #   implements the `__eq__()` method. The types `frozenset` and `Delivery`
         #   are also comparable (in the same manner).
-        raise NotImplementedError()  # TODO: remove this line.
+        return self.current_location == other.current_location and self.loaded_deliveries == other.loaded_deliveries and \
+               self.dropped_deliveries == other.dropped_deliveries
 
     def __hash__(self):
         """
@@ -76,7 +76,7 @@ class DeliveriesTruckState(GraphProblemState):
          Notice that `sum()` can receive an *ITERATOR* as argument; That is, you can simply write something like this:
         >>> sum(<some expression using item> for item in some_collection_of_items)
         """
-        raise NotImplementedError()  # TODO: remove this line.
+        return sum(delivery.nr_packages for delivery in self.loaded_deliveries)
 
 
 @dataclass(frozen=True)
@@ -122,9 +122,9 @@ class DeliveryCost(ExtendedCost):
 
     def __repr__(self):
         return f'DeliveryCost(' \
-               f'dist={self.distance_cost:11.3f} meter, ' \
-               f'time={self.time_cost:11.3f} minutes, ' \
-               f'money={self.money_cost:11.3f} nis)'
+            f'dist={self.distance_cost:11.3f} meter, ' \
+            f'time={self.time_cost:11.3f} minutes, ' \
+            f'money={self.money_cost:11.3f} nis)'
 
 
 class DeliveriesTruckProblem(GraphProblem):
@@ -183,7 +183,32 @@ class DeliveriesTruckProblem(GraphProblem):
         """
 
         assert isinstance(state_to_expand, DeliveriesTruckState)
-        raise NotImplementedError()  # TODO: remove this line!
+        current_junction = state_to_expand.current_location
+        num_loaded_packages = state_to_expand.get_total_nr_packages_loaded()
+        max_capacity = self.problem_input.delivery_truck.max_nr_loaded_packages
+        deliveries_to_pick = self.get_deliveries_waiting_to_pick(state_to_expand)
+        loaded_deliveries = state_to_expand.loaded_deliveries
+        dropped_deliveries = state_to_expand.dropped_deliveries
+
+        for d in loaded_deliveries:
+            delivery_to_drop = {d}
+            new_loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
+            new_dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
+            operator_name = "drop " + d.client_name
+            succ_junction = d.drop_location
+            yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, new_dropped_deliveries, succ_junction),
+                                 self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
+                                 operator_name)
+
+        for d in deliveries_to_pick:
+            if max_capacity >= num_loaded_packages + d.nr_packages:
+                delivery_to_pick = {d}
+                new_loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
+                operator_name = "pick " + d.client_name
+                succ_junction = d.pick_location
+                yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, dropped_deliveries, succ_junction),
+                                     self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
+                                     operator_name)
 
     def is_goal(self, state: GraphProblemState) -> bool:
         """
@@ -191,7 +216,7 @@ class DeliveriesTruckProblem(GraphProblem):
         TODO [Ex.15]: implement this method!
         """
         assert isinstance(state, DeliveriesTruckState)
-        raise NotImplementedError()  # TODO: remove the line!
+        return len(state.dropped_deliveries) == len(self.problem_input.deliveries)
 
     def _calc_map_road_cost(self, link: Link) -> DeliveryCost:
         """
@@ -254,7 +279,7 @@ class DeliveriesTruckProblem(GraphProblem):
                 generated set.
             Note: This method can be implemented using a single line of code.
         """
-        raise NotImplementedError()  # TODO: remove this line!
+        return set(self.problem_input.deliveries).difference(state.loaded_deliveries.union(state.dropped_deliveries))
 
     def get_all_junctions_in_remaining_truck_path(self, state: DeliveriesTruckState) -> Set[Junction]:
         """
@@ -268,7 +293,10 @@ class DeliveriesTruckProblem(GraphProblem):
                 `list-comprehension` technique. Example: {i * 10 for i in range(100)} would create
                 a set of the items {0, 10, 20, 30, ..., 990}
         """
-        raise NotImplementedError()  # TODO: remove this line!
+        remaining_deliveries = self.get_deliveries_waiting_to_pick(state).union(state.loaded_deliveries)
+        remaining_locations = {d.pick_location for d in remaining_deliveries}.union(d.drop_location for d in remaining_deliveries)
+        remaining_locations.add(state.current_location)
+        return remaining_locations
 
 
 class TruckDeliveriesInnerMapProblemHeuristic(HeuristicFunction):

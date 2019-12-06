@@ -54,4 +54,15 @@ class CachedMapDistanceFinder:
         The cache key should include the source & target indices.
         """
 
-        raise NotImplementedError()  # TODO: remove this line!
+        src_index = src_junction.index
+        target_index = tgt_junction.index
+        key = (src_index, target_index)
+
+        if self._is_in_cache(key):
+            return self._get_from_cache(key)
+
+        problem = MapProblem(self.streets_map, src_index, target_index, self.road_cost_fn, self.zero_road_cost)
+        res = self.map_problem_solver.solve_problem(problem)
+        cost = res.solution_cost
+        self._insert_to_cache(key, cost)
+        return cost

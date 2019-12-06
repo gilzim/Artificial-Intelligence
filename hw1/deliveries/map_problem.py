@@ -56,7 +56,15 @@ class MapProblem(GraphProblem):
         assert isinstance(state_to_expand, MapState)
 
         # Get the junction (in the map) that is represented by the state to expand.
-        junction = self.streets_map[state_to_expand.junction_id]
+        junction: Junction = self.streets_map[state_to_expand.junction_id]
+        for link in junction.outgoing_links:
+            successor: Junction = self.streets_map[link.target]
+            if self.road_cost_fn is None:
+                cost = link.distance
+            else:
+                cost = self.road_cost_fn(link)
+            yield OperatorResult(successor_state=MapState(successor.index), operator_cost=cost)
+
 
         # TODO [Ex.10]:
         #  Read the documentation of this method in the base class `GraphProblem.expand_state_with_costs()`.
