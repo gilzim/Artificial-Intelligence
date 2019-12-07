@@ -189,24 +189,25 @@ class DeliveriesTruckProblem(GraphProblem):
         deliveries_to_pick = self.get_deliveries_waiting_to_pick(state_to_expand)
         loaded_deliveries = state_to_expand.loaded_deliveries
         dropped_deliveries = state_to_expand.dropped_deliveries
+        deliveries_left = loaded_deliveries.union(deliveries_to_pick)
 
         for d in loaded_deliveries:
             delivery_to_drop = {d}
-            loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
-            dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
+            new_loaded_deliveries = loaded_deliveries.difference(delivery_to_drop)
+            new_dropped_deliveries = dropped_deliveries.union(delivery_to_drop)
             operator_name = "drop " + d.client_name
             succ_junction = d.drop_location
-            yield OperatorResult(DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction),
+            yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, new_dropped_deliveries, succ_junction),
                                  self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
                                  operator_name)
 
         for d in deliveries_to_pick:
             if max_capacity >= num_loaded_packages + d.nr_packages:
                 delivery_to_pick = {d}
-                loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
+                new_loaded_deliveries = loaded_deliveries.union(delivery_to_pick)
                 operator_name = "pick " + d.client_name
                 succ_junction = d.pick_location
-                yield OperatorResult(DeliveriesTruckState(loaded_deliveries, dropped_deliveries, succ_junction),
+                yield OperatorResult(DeliveriesTruckState(new_loaded_deliveries, dropped_deliveries, succ_junction),
                                      self.map_distance_finder.get_map_cost_between(current_junction, succ_junction),
                                      operator_name)
 
