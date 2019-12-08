@@ -189,11 +189,11 @@ class DeliveriesTruckProblem(GraphProblem):
         deliveries_to_pick = self.get_deliveries_waiting_to_pick(state_to_expand)
         loaded_deliveries = state_to_expand.loaded_deliveries
         dropped_deliveries = state_to_expand.dropped_deliveries
-        deliveries_left = list(loaded_deliveries)+list(deliveries_to_pick)
+        deliveries_left = loaded_deliveries.union(deliveries_to_pick)
 
-        for i, d in enumerate(deliveries_left):
+        for d in deliveries_left:
             delivery = {d}
-            if i < len(loaded_deliveries):
+            if d in loaded_deliveries:
                 new_loaded_deliveries = loaded_deliveries.difference(delivery)
                 new_dropped_deliveries = dropped_deliveries.union(delivery)
                 operator_name = "drop " + d.client_name
@@ -288,11 +288,14 @@ class DeliveriesTruckProblem(GraphProblem):
         if self.optimization_objective == OptimizationObjective.Distance:
             return total_distance_lower_bound
         elif self.optimization_objective == OptimizationObjective.Time:
-            return total_distance_lower_bound / MAX_ROAD_SPEED
+            return self._calc_map_road_cost(
+                Link(source=0, target=1, distance=total_distance_lower_bound, highway_type=0, is_toll_road=False,
+                     max_speed=MAX_ROAD_SPEED)).time_cost
         else:
             assert self.optimization_objective == OptimizationObjective.Money
             return self._calc_map_road_cost(
-                Link(source=1, target=1, distance=total_distance_lower_bound, highway_type=1, max_speed=MAX_ROAD_SPEED)).distance_cost
+                Link(source=0, target=1, distance=total_distance_lower_bound, highway_type=0, is_toll_road=False,
+                     max_speed=MAX_ROAD_SPEED)).money_cost
 
     def get_deliveries_waiting_to_pick(self, state: DeliveriesTruckState) -> Set[Delivery]:
         """
@@ -321,7 +324,7 @@ class DeliveriesTruckProblem(GraphProblem):
         remaining_locations = {state.current_location}
         remaining_locations = remaining_locations.\
             union({d.pick_location for d in self.get_deliveries_waiting_to_pick(state)}).\
-            union(d.drop_location for d in state.loaded_deliveries)
+            union({d.drop_location for d in state.loaded_deliveries})
 
         return remaining_locations
 

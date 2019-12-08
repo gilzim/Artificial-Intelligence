@@ -65,6 +65,4 @@ class CachedMapDistanceFinder:
         res = self.map_problem_solver.solve_problem(problem)
         cost = res.solution_cost
         self._insert_to_cache(key, cost)
-        if res.solution_final_state is None:
-            return None
         return cost

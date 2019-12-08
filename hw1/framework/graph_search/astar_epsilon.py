@@ -71,13 +71,14 @@ class AStarEpsilon(AStar):
 
         if self.open.is_empty():
             return None
-        min_priority = min([node.expanding_priority for node in self.open._nodes_queue]) * (1 + self.focal_epsilon)
+
+        min_priority = self.open.peek_next_node().expanding_priority * (1 + self.focal_epsilon)
         focal = [self.open.pop_next_node() for i in range(self.max_focal_size)
                  if (not self.open.is_empty()) and self.open.peek_next_node().expanding_priority <= min_priority]
 
         min_node_index = np.argmin([self.within_focal_priority_function(node, problem, self) for node in focal])
         min_node = focal.pop(min_node_index.item())
-        while focal:
-            self.open.push_node(focal.pop(0))
+
+        [self.open.push_node(node) for node in focal]
 
         return min_node
