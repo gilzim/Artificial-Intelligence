@@ -138,5 +138,5 @@ class TruckDeliveriesMSTAirDistHeuristic(HeuristicFunction):
         for (u, v) in edges:
             G.add_edge(u.index, v.index,
                        weight=self.cached_air_distance_calculator.get_air_distance_between_junctions(v, u))
-        T = list(nx.minimum_spanning_edges(G))
-        return sum(att['weight'] for (u, v, att) in T)
+        T = nx.minimum_spanning_tree(G)
+        return sum(att['weight'] for (u, v, att) in T.edges(data=True))
