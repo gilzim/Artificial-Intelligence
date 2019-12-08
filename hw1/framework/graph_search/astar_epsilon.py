@@ -81,4 +81,6 @@ class AStarEpsilon(AStar):
 
         [self.open.push_node(node) for node in focal]
 
+        self.close.add_node(min_node)
+
         return min_node
