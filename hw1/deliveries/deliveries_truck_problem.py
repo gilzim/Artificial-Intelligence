@@ -318,10 +318,10 @@ class DeliveriesTruckProblem(GraphProblem):
                 `list-comprehension` technique. Example: {i * 10 for i in range(100)} would create
                 a set of the items {0, 10, 20, 30, ..., 990}
         """
-        remaining_deliveries = self.get_deliveries_waiting_to_pick(state).union(state.loaded_deliveries)
-        remaining_locations = {d.pick_location for d in remaining_deliveries}.union(
-            d.drop_location for d in remaining_deliveries)
+        remaining_locations = {d.pick_location for d in self.get_deliveries_waiting_to_pick(state)}.\
+            union(d.drop_location for d in state.loaded_deliveries)
         remaining_locations.add(state.current_location)
+
         return remaining_locations
 
 
